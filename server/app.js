@@ -7,6 +7,7 @@ const io = new Server(server,{
 	cors: {	}
   });
 
+const PORT = process.env.PORT || 8080
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
@@ -34,9 +35,8 @@ io.on('connection', function(socket){
 	})
 });
 
-server.listen(3000, () => {
-	console.log("Express server listening on port %d in %s mode", 3000, app.settings.env);
-	console.log('listening on *:3000');
+server.listen(PORT, () => {
+	console.log("Express server listening on port %d in %s mode", PORT, app.settings.env);
   });
   
   
