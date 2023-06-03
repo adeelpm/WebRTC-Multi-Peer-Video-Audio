@@ -1,28 +1,124 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-        <link rel="stylesheet" href="main.css">
-    </head>
-
-    <body>
-        <div class="videos">
-            <div>
-                <video id="localVideo" autoplay muted playsinline ></video>
-                <!-- <div class="soundbar"><span class="currentVolume"></span></div> -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebRTC Demo</title>
+  </head>
+  <body>
+  <main>
+    <div id="container">
+      <div id="player">
+        <video id="video"></video>
+        <div id="controls" class="d-none">
+          <div id="progress-controls">
+            <div id="progress-times">
+              <span id="time-left" class="time"></span>
+              <span id="time-right" class="time"></span>
             </div>
+            <input type="range" id="progress" min="0" value="0" step="any">
+          </div>
+          <div id="buttons-controls">
+            <div id="buttons-left">
+              <div id="files-wrap">
+                <img src="img/folder.svg" class="btn">
+                <div id="files-container">
+                  <div id="filelist"></div>
+                  <div id="filelist-tools">
+                    <img src="img/playlist_play.svg" class="btn btn-dark">
+                    <img src="img/playlist_add.svg" class="btn btn-dark">
+                  </div>
+                </div>
+              </div>
+              <div id="volume-wrap">
+                <img src="img/volume_up.svg" class="btn">
+                <input type="range" id="volume" min="0" max="1" value="1" step="0.01">
+              </div>
+            </div>
+            <div id="buttons-center">
+              <img id="previous" src="img/skip_previous.svg" class="btn btn-sm">
+              <img id="rewind" src="img/fast_rewind.svg" class="btn btn-sm">
+              <img src="img/play_arrow.svg" class="btn">
+              <img id="forward" src="img/fast_forward.svg" class="btn btn-sm">
+              <img id="next" src="img/skip_next.svg" class="btn btn-sm">
+            </div>
+            <div id="buttons-right">
+              <div id="settings-wrap">
+                <img src="img/settings.svg" class="btn">
+                <div id="settings">
+                  <label for="seekStep" data-i18n="seekStep"></label>
+                  <input type="number" id="seekStep" min="1" max="1200" step="1">
+  
+                  <label for="seekLongStep" data-i18n="seekLongStep"></label>
+                  <input type="number" id="seekLongStep" min="1" max="1200" step="1">
+  
+                  <label for="volumeStep" data-i18n="volumeStep"></label>
+                  <input type="number" id="volumeStep" min="1" max="50" step="1">
+  
+                  <label for="speedStep" data-i18n="speedStep"></label>
+                  <select id="speedStep">
+                    <option value="0.1">0.1</option>
+                    <option value="0.2">0.2</option>
+                    <option value="0.25">0.25</option>
+                    <option value="0.5">0.5</option>
+                    <option value="1">1.0</option>
+                  </select>
+  
+                  <label for="screenshotFormat" data-i18n="screenshotFormat"></label>
+                  <select id="screenshotFormat">
+                    <option value="jpg">jpg</option>
+                    <option value="png">png</option>
+                  </select>
+  
+                  <a href="shortcuts.html" target="_blank" id="shortcuts" data-i18n="shortcuts"></a>
+                </div>
+              </div>
+              <img src="img/fullscreen.svg" class="btn">
+            </div>
+          </div>
         </div>
-        
-        <br />
-        <div id="connections"></div>
+        <div id="info" class="d-none"></div>
+        <div id="lt-info" class="d-none time-info"></div>
+        <div id="rt-info" class="d-none time-info"></div>
+        <div id="error-info" class="d-none"></div>
+      </div>
+    </div>
+    <div class="dropzone d-none" data-i18n="dropzone"></div>
+    <div class="d-none">
+      <input type="file" id="file" accept="video/*,audio/*,.mp4,.mp3,.mkv,.webm,.3gp,.avi,.mpeg,.mpg,.ogg,.wmv,.wav,.mov" multiple>
+    </div>
+  </main>
+  <nav>
+    <h2>1. Start your Webcam</h2>
+    <div class="videos">
+    <span>
+      <h3>Local Stream</h3>
+      <video muted id="localVideo" autoplay muted playsinline></video>
+      <!-- <div class="soundbar"><span class="currentVolume"></span></div> -->
+    </span>
+    <!-- <span>
+      <h3>Remote Stream</h3>
+      <video id="remoteVideo" autoplay playsinline></video>
+    </span> -->
+  </div>
 
-        <script src="socket.io/socket.io.js"></script>
-        <script src="config.js"></script>
-        <script src="webrtc.js"></script>
+  <!-- <button id="webcamButton">Start webcam</button>
+  <h2>2. Create a new Call</h2>
+  <button id="callButton" disabled>Create Call (offer)</button>
 
-        <script type="text/javascript">
-            pageReady();
-        </script>
+  <h2>3. Join a Call</h2>
+  <p>Answer the call from a different browser window or device</p>
+  
+  <input id="callInput" />
+  <button id="answerButton" disabled>Answer</button>
+  
+  <h2>4. Hangup</h2>
+  
+  <button id="hangupButton" disabled>Hangup</button> -->
+</nav>
 
-    </body>
+    <script type="module" src="/main.js"></script>
+    <script type="module" src="/player.js"></script>
+  </body>
 </html>

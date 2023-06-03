@@ -1,6 +1,12 @@
+import { io } from "https://cdn.socket.io/4.4.1/socket.io.esm.min.js";
+import { config } from "./config";
+import "./main.css"
+
 var localVideo;
+var remoteVideo;
 var firstPerson = false;
 var socketCount = 0;
+var socket;
 var socketId;
 var localStream;
 var connections = [];
@@ -26,8 +32,7 @@ function pageReady() {
         navigator.mediaDevices.getUserMedia(constraints)
             .then(getUserMediaSuccess)
             .then(function(){
-
-                socket = io.connect(config.host, {secure: true});
+                socket = io.connect(config.host, {secure: false});
                 socket.on('signal', gotMessageFromServer);    
 
                 socket.on('connect', function(){
@@ -46,20 +51,21 @@ function pageReady() {
                             if(!connections[socketListId]){
                                 connections[socketListId] = new RTCPeerConnection(peerConnectionConfig);
                                 //Wait for their ice candidate       
-                                connections[socketListId].onicecandidate = function(){
+                                connections[socketListId].onicecandidate = function(event){
                                     if(event.candidate != null) {
-                                        console.log('SENDING ICE');
                                         socket.emit('signal', socketListId, JSON.stringify({'ice': event.candidate}));
                                     }
                                 }
 
-                                //Wait for their video stream
-                                connections[socketListId].onaddstream = function(){
-                                    gotRemoteStream(event, socketListId)
-                                }    
+                                connections[socketListId].ontrack = function(event) {
+                                    gotRemoteStream(event.streams[0], socketListId);
+                                  };
 
                                 //Add the local video stream
-                                connections[socketListId].addStream(localStream);                                                                
+                                const connection = connections[socketListId];
+                                localStream.getTracks().forEach(track => {
+                                    connection.addTrack(track, localStream);
+                                });                                                              
                             }
                         });
 
@@ -68,7 +74,6 @@ function pageReady() {
                         if(count >= 2){
                             connections[id].createOffer().then(function(description){
                                 connections[id].setLocalDescription(description).then(function() {
-                                    // console.log(connections);
                                     socket.emit('signal', id, JSON.stringify({'sdp': connections[id].localDescription}));
                                 }).catch(e => console.log(e));        
                             });
@@ -83,8 +88,13 @@ function pageReady() {
 }
 
 function getUserMediaSuccess(stream) {
-    localStream = stream;
-    localVideo.src = window.URL.createObjectURL(stream);
+    localStream = stream
+
+    if ('srcObject' in localVideo) {
+        localVideo.srcObject = stream;
+      } else {
+        localVideo.src = URL.createObjectURL(stream);
+      }
 }
 
 function gotRemoteStream(event, id) {
@@ -94,7 +104,11 @@ function gotRemoteStream(event, id) {
         div    = document.createElement('div')
 
     video.setAttribute('data-socket', id);
-    video.src         = window.URL.createObjectURL(event.stream);
+    if ('srcObject' in video) {
+        video.srcObject = event;
+      } else {
+        video.src = URL.createObjectURL(event);
+      }
     video.autoplay    = true; 
     video.muted       = true;
     video.playsinline = true;
@@ -128,3 +142,5 @@ function gotMessageFromServer(fromId, message) {
         }                
     }
 }
+
+pageReady()
