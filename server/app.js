@@ -17,6 +17,9 @@ io.on('connection', (socket) => {
 });
 
 io.on('connection', function(socket){
+
+	console.log("sockets",[...io.sockets.sockets.keys()]);
+
 	io.sockets.emit("user-joined", socket.id, io.engine.clientsCount, [...io.sockets.sockets.keys()]);
 
 	socket.on('signal', (toId, message) => {
@@ -24,9 +27,9 @@ io.on('connection', function(socket){
 		io.to(toId).emit('signal', socket.id, message);
   	});
 
-    socket.on("message", function(data){
+    socket.on("player-data", function(data){
 		console.log("messsage");
-		io.sockets.emit("broadcast-message", socket.id, data);
+		io.sockets.emit("player-data", socket.id, data);
     })
 
 	socket.on('disconnect', function() {

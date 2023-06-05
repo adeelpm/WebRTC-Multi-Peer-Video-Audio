@@ -1,5 +1,5 @@
+import { channels } from "./main.js";
 import "./player.css"
-
 var extensionMode;
 const popupWindow = !0,
     video = document.getElementById("video"),
@@ -66,11 +66,9 @@ class Utils {
         var b = Math.round(a);
         a = Math.floor(b / 60);
         b %= 60;
-        return `${
-            10 > a ? "0" + a : a
-        }:${
-            10 > b ? "0" + b : b
-        }`
+        return `${10 > a ? "0" + a : a
+            }:${10 > b ? "0" + b : b
+            }`
     }
     static screenshot() {
         if (!(2 > video.readyState)) {
@@ -82,10 +80,10 @@ class Utils {
             a.height = video.videoHeight;
             a.getContext("2d").drawImage(video, 0, 0, a.width, a.height);
             settings && "png" == settings.screenshotFormat ? (b.download =
-                `screenshot-${ video.currentTime.toFixed(3)
-            }.png`, b.href = a.toDataURL("image/png")) : (b.download =
-                `screenshot-${ video.currentTime.toFixed(3)
-            }.jpg`, b.href = a.toDataURL("image/jpeg", .98));
+                `screenshot-${video.currentTime.toFixed(3)
+                }.png`, b.href = a.toDataURL("image/png")) : (b.download =
+                    `screenshot-${video.currentTime.toFixed(3)
+                    }.jpg`, b.href = a.toDataURL("image/jpeg", .98));
             b.click()
         }
     }
@@ -110,24 +108,24 @@ class Clock {
     }
 }
 class Player {
-    static init() {}
+    static init() { }
     static async loadFile(a) {
         document.title = a.name;
         Player.objectURL && URL.revokeObjectURL(Player.objectURL);
         Player.objectURL = URL.createObjectURL(a);
         video.src = Player.objectURL;
-        if (void 0 === a.canPlay) 
+        if (void 0 === a.canPlay)
             try {
                 await video.play(),
-                a.canPlay = !0
+                    a.canPlay = !0
             }
-         catch (b) {
-            a.canPlay = !1,
-            Player.stop(),
-            "NotSupportedError" == b.name ? Utils.showError(Messages.cannotSupportFormat) : "NotAllowedError" == b.name ? (alert(Messages.notAllowedError), a.canPlay = void 0) : Utils.showError(Messages.error)
-        } else 
+            catch (b) {
+                a.canPlay = !1,
+                    Player.stop(),
+                    "NotSupportedError" == b.name ? Utils.showError(Messages.cannotSupportFormat) : "NotAllowedError" == b.name ? (alert(Messages.notAllowedError), a.canPlay = void 0) : Utils.showError(Messages.error)
+            } else
             !0 === a.canPlay && Player.play();
-         Controls.onVideoChange();
+        Controls.onVideoChange();
         FileManager.updatePlaylistIndicator();
         !1 === a.canPlay && setTimeout(Controls.onVideoEnd, 1E3)
     }
@@ -136,16 +134,16 @@ class Player {
         video.load()
     }
     static async play() {
-        if (video.src) 
+        if (video.src)
             try {
                 await video.play()
             }
-         catch (a) {
-            Utils.showError(Messages.error)
-        }
+            catch (a) {
+                Utils.showError(Messages.error)
+            }
     }
     static playNext(a = !0) {
-        return(a = FileManager.getNextFile(!0, a)) ? (Player.loadFile(a), !0) : !1
+        return (a = FileManager.getNextFile(!0, a)) ? (Player.loadFile(a), !0) : !1
     }
     static playPrevious() {
         let a = FileManager.getNextFile(!1);
@@ -155,15 +153,14 @@ class Player {
         video.paused || video.ended ? Player.play() : video.pause()
     }
     static toggleMute() {
-        video.muted = ! video.muted;
+        video.muted = !video.muted;
         Utils.showInfo(video.muted ? Messages.muted : Messages.unmuted)
     }
     static seek(a, b) {
-        ! video.src || !Number.isFinite(video.duration) || 1 > b && ! video.paused || (video.currentTime = a ? Math.min(video.currentTime + b, video.duration) : Math.max(video.currentTime - b, 0), 1 <= b && (a =
-            `${ Utils.formatTime(video.currentTime)
-        } / ${
-            Utils.formatTime(video.duration)
-        }`, Utils.showInfo(a)))
+        !video.src || !Number.isFinite(video.duration) || 1 > b && !video.paused || (video.currentTime = a ? Math.min(video.currentTime + b, video.duration) : Math.max(video.currentTime - b, 0), 1 <= b && (a =
+            `${Utils.formatTime(video.currentTime)
+            } / ${Utils.formatTime(video.duration)
+            }`, Utils.showInfo(a)))
     }
     static volume(a, b) {
         let c = Math.round(100 * video.volume);
@@ -184,18 +181,60 @@ class Player {
         video.src && Number.isFinite(video.duration) && (ltInfo.classList.contains("d-none") ? (Player.updateVideoTime(), ltInfo.classList.remove("d-none"), Player.timeTimer = setInterval(Player.updateVideoTime, 1E3)) : (ltInfo.classList.add("d-none"), clearInterval(Player.timeTimer)))
     }
     static updateVideoTime() {
-        let a = `${
-            Utils.formatTime(video.currentTime)
-        } / ${
-            Utils.formatTime(video.duration)
-        }  [-${
-            Utils.formatTime(video.duration - video.currentTime)
-        }]`;
+        let a = `${Utils.formatTime(video.currentTime)
+            } / ${Utils.formatTime(video.duration)
+            }  [-${Utils.formatTime(video.duration - video.currentTime)
+            }]`;
         ltInfo.textContent = a
     }
 }
 var mouseMoveTimer = 0,
     clickDblclickTimer = 0;
+
+export class Syncronization{
+
+    static init(){
+        video.addEventListener("pause", Syncronization.onPauseSync);
+        video.addEventListener("play", Syncronization.onPlaySync);
+    }
+
+    static send(data){
+        Object.entries(channels).forEach(entry => {            
+            const [socket, channel] = entry;
+            if(channel.readyState == "open"){
+                console.log("sending: ",data,"to ",socket)
+                channel.send(JSON.stringify(data))
+            }
+        } )
+    }
+
+    // syncs player on receiving data
+    static async synconreceive(data){
+        
+        if(data.play){
+            video.removeEventListener("play",Syncronization.onPlaySync)
+            video.currentTime = data.time
+            await Player.play()
+
+            video.addEventListener("play", Syncronization.onPlaySync);
+        }
+        if(data.pause){
+            video.removeEventListener("pause",Syncronization.onPauseSync)
+            await video.pause()
+            video.addEventListener("pause", Syncronization.onPauseSync);
+        }
+    }
+
+    static onPauseSync(){
+        Syncronization.send({pause:true})
+
+    }
+    static onPlaySync(){
+        video.currentTime = Math.round(video.currentTime)
+        Syncronization.send({play:true,time:Math.round(video.currentTime)})
+    }
+}
+
 class Controls {
     static init() {
         document.body.addEventListener("keydown", Controls.keyboardListener);
@@ -231,7 +270,7 @@ class Controls {
         playerPanel.addEventListener("mousemove", Controls.onMouseMove)
     }
     static changeTimeMode() {
-        remainingTimeMode = ! remainingTimeMode;
+        remainingTimeMode = !remainingTimeMode;
         Controls.updateTime();
         Settings.saveRemainingTimeMode(remainingTimeMode)
     }
@@ -244,13 +283,13 @@ class Controls {
         Controls.updateTime()
     }
     static onPause() {
-        playBtn.src = "img/play_arrow.svg"
+        playBtn.src = "assets/play_arrow.svg"        
     }
     static onPlay() {
-        playBtn.src = "img/pause.svg"
+        playBtn.src = "assets/pause.svg"
     }
     static onFullscreenChange() {
-        getFullscreenElement() ? fullscreenBtn.src = "img/fullscreen_exit.svg" : fullscreenBtn.src = "img/fullscreen.svg"
+        getFullscreenElement() ? fullscreenBtn.src = "assets/fullscreen_exit.svg" : fullscreenBtn.src = "assets/fullscreen.svg"
     }
     static onVideoChange() {
         const [a, b] = FileManager.hasPreviousNext();
@@ -272,7 +311,7 @@ class Controls {
     static onVolumeChange() {
         const a = video.volume;
         volume.value = a;
-        volumeBtn.src = video.muted ? "img/volume_off.svg" : .5 < a ? "img/volume_up.svg" : 0 < a ? "img/volume_down.svg" : "img/volume_mute.svg"
+        volumeBtn.src = video.muted ? "assets/volume_off.svg" : .5 < a ? "assets/volume_up.svg" : 0 < a ? "assets/volume_down.svg" : "assets/volume_mute.svg"
     }
     static onVideoEnd() {
         Player.playNext(!1) || WindowManager.exitFullscreen()
@@ -326,29 +365,35 @@ class FileManager {
         addFileBtn.addEventListener("click", FileManager.addFiles)
     }
     static getNextFile(a, b = !0) {
-        if (0 == fileList.length || 1 == fileList.length && !1 === fileList[0].canPlay) 
+        if (0 == fileList.length || 1 == fileList.length && !1 === fileList[0].canPlay)
             return null;
-        
+
+
 
         if (0 == FileManager.repeatMode) {
-            if (a = a ? FileManager.playIndex + 1 : FileManager.playIndex - 1, 0 <= a && a < fileList.length) 
+            if (a = a ? FileManager.playIndex + 1 : FileManager.playIndex - 1, 0 <= a && a < fileList.length)
                 return FileManager.playIndex = a,
-                fileList[a]
+                    fileList[a]
 
-            
+
+
+
 
         } else {
-            if (1 == FileManager.repeatMode || 2 == FileManager.repeatMode && b) 
+            if (1 == FileManager.repeatMode || 2 == FileManager.repeatMode && b)
                 return a = a ? FileManager.playIndex + 1 : FileManager.playIndex - 1,
-                0 > a ? a = fileList.length - 1 : a >= fileList.length && (a = 0),
-                FileManager.playIndex = a,
-                fileList[a];
-            
+                    0 > a ? a = fileList.length - 1 : a >= fileList.length && (a = 0),
+                    FileManager.playIndex = a,
+                    fileList[a];
 
-            if ((a = fileList[FileManager.playIndex]) && (void 0 === a.canPlay || !0 === a.canPlay)) 
+
+
+            if ((a = fileList[FileManager.playIndex]) && (void 0 === a.canPlay || !0 === a.canPlay))
                 return a
 
-            
+
+
+
 
         }
         return null
@@ -358,127 +403,129 @@ class FileManager {
             !1,
             !1
         ] : 0 == FileManager.repeatMode ? [
-                0 < FileManager.playIndex,
-                FileManager.playIndex<fileList.length - 1] : [!0, !0]
+            0 < FileManager.playIndex,
+            FileManager.playIndex < fileList.length - 1] : [!0, !0]
     } static openFiles() { FileManager.openMode = "open"; FileManager.inputFile.click() } static addFiles() { FileManager.openMode = "append"; FileManager.inputFile.click() } static onSelectFile(a) { FileManager.updateFileList(this.files, "append" === FileManager.openMode); this.value = null } static updateFileList(a, b = !1) {
         if (0 < a.length) {
             a = Array.from(a); const c = new Intl.Collator; a.sort((d, e) => c.compare(d.name, e.name)); b ? (fileList = fileList.concat(a), Controls.onVideoChange()) : (fileList = a, FileManager.playIndex = 0, Player.loadFile(fileList[0])); FileManager.updatePlaylistUI(a, b)
         }
     } static updatePlaylistUI(a, b) { b || (filelistContainer.innerHTML = ""); for (let c of a) filelistContainer.appendChild(FileManager.createFileItem(c)); filesContainer.classList.add("show") } static createFileItem(a) {
         let b = document.createElement("div"); b.className = "file-item"; b.textContent = a.name; b.addEventListener("click", c => {
-                    c.stopPropagation();
-                    c = fileList.indexOf(a);
-                    -1 !== c && (FileManager.playIndex = c, Player.loadFile(a))
-                }
-            );
-            return b
+            c.stopPropagation();
+            c = fileList.indexOf(a);
+            -1 !== c && (FileManager.playIndex = c, Player.loadFile(a))
         }
-        static updatePlaylistIndicator() {
-            for (var a of filelistContainer.querySelectorAll(".active")) 
-                a.classList.remove("active");
-            
+        );
+        return b
+    }
+    static updatePlaylistIndicator() {
+        for (var a of filelistContainer.querySelectorAll(".active"))
+            a.classList.remove("active");
 
-            (a = filelistContainer.children[FileManager.playIndex]) && a.classList.add("active")
-        }
-        static updateRepeat(a) {
-            a.stopPropagation();
-            0 == FileManager.repeatMode ? (FileManager.repeatMode = 1, repeatBtn.src = "img/repeat.svg") : 1 == FileManager.repeatMode ? (FileManager.repeatMode = 2, repeatBtn.src = "img/repeat_one.svg") : (FileManager.repeatMode = 0, repeatBtn.src = "img/playlist_play.svg");
-            Controls.onVideoChange()
-        }
-        static toggleDropzone(a) {
-            let b = document.body.firstElementChild,
-                c = b.nextElementSibling;
-            a ? (b.classList.add("d-none"), c.classList.remove("d-none")) : (b.classList.remove("d-none"), c.classList.add("d-none"))
-        }
-        static dragEnd() {
-            clearInterval(dragTimer);
-            dragTimer = 0;
-            FileManager.toggleDropzone(!1)
-        }
-        static onDropOver(a) {
-            a.preventDefault();
-            a.dataTransfer.dropEffect = "move";
-            lastDragTime = performance.now();
-            0 == dragTimer && (FileManager.toggleDropzone(!0), dragTimer = setInterval(function () {
-                200 < performance.now() - lastDragTime && FileManager.dragEnd()
-            }, 200))
-        }
-        static onDrop(a) {
-            a.preventDefault();
-            FileManager.dragEnd();
-            FileManager.updateFileList(a.dataTransfer.files)
+
+
+        (a = filelistContainer.children[FileManager.playIndex]) && a.classList.add("active")
+    }
+    static updateRepeat(a) {
+        a.stopPropagation();
+        0 == FileManager.repeatMode ? (FileManager.repeatMode = 1, repeatBtn.src = "assets/repeat.svg") : 1 == FileManager.repeatMode ? (FileManager.repeatMode = 2, repeatBtn.src = "assets/repeat_one.svg") : (FileManager.repeatMode = 0, repeatBtn.src = "assets/playlist_play.svg");
+        Controls.onVideoChange()
+    }
+    static toggleDropzone(a) {
+        let b = document.body.firstElementChild,
+            c = b.nextElementSibling;
+        a ? (b.classList.add("d-none"), c.classList.remove("d-none")) : (b.classList.remove("d-none"), c.classList.add("d-none"))
+    }
+    static dragEnd() {
+        clearInterval(dragTimer);
+        dragTimer = 0;
+        FileManager.toggleDropzone(!1)
+    }
+    static onDropOver(a) {
+        a.preventDefault();
+        a.dataTransfer.dropEffect = "move";
+        lastDragTime = performance.now();
+        0 == dragTimer && (FileManager.toggleDropzone(!0), dragTimer = setInterval(function () {
+            200 < performance.now() - lastDragTime && FileManager.dragEnd()
+        }, 200))
+    }
+    static onDrop(a) {
+        a.preventDefault();
+        FileManager.dragEnd();
+        FileManager.updateFileList(a.dataTransfer.files)
+    }
+}
+class WindowManager {
+    static init() {
+        WindowManager.saveWindowState()
+    }
+    static saveWindowState() {
+        WindowManager.state = {
+            x: window.screenX,
+            y: window.screenY,
+            width: window.outerWidth,
+            height: window.outerHeight
         }
     }
-    class WindowManager {
-        static init() {
+    static restoreState() {
+        let a = WindowManager.state;
+        a && (window.resizeTo(a.width, a.height), window.moveTo(a.x, a.y))
+    }
+    static getBrowserHeadHeight() {
+        if (void 0 !== WindowManager.browserHeadHeight)
+            return WindowManager.browserHeadHeight;
+
+
+
+        let a = window.outerHeight - window.innerHeight;
+        return 0 < a ? WindowManager.browserHeadHeight = a : 28
+    }
+    static scaleSize(a) {
+        if (popupWindow && 0 < video.videoWidth && 0 < video.videoHeight) {
+            var b = WindowManager.getBrowserHeadHeight();
+            const c = video.videoWidth / video.videoHeight;
+            let d = Math.min(window.screen.availWidth, video.videoWidth * a);
+            a = Math.min(window.screen.availHeight, video.videoHeight * a + b);
+            let e = Math.floor((a - b) * c);
+            e <= d ? d = e : (b = Math.floor(d / c) + b, b <= a && (a = b));
+            window.resizeTo(d, a);
+            window.moveTo((screen.availWidth - d) / 2 + screen.availLeft, (screen.availHeight - a) / 2 + screen.availTop);
             WindowManager.saveWindowState()
         }
-        static saveWindowState() {
-            WindowManager.state = {
-                x: window.screenX,
-                y: window.screenY,
-                width: window.outerWidth,
-                height: window.outerHeight
-            }
-        }
-        static restoreState() {
-            let a = WindowManager.state;
-            a && (window.resizeTo(a.width, a.height), window.moveTo(a.x, a.y))
-        }
-        static getBrowserHeadHeight() {
-            if (void 0 !== WindowManager.browserHeadHeight) 
-                return WindowManager.browserHeadHeight;
-            
-
-            let a = window.outerHeight - window.innerHeight;
-            return 0 < a ? WindowManager.browserHeadHeight = a : 28
-        }
-        static scaleSize(a) {
-            if (popupWindow && 0 < video.videoWidth && 0 < video.videoHeight) {
-                var b = WindowManager.getBrowserHeadHeight();
-                const c = video.videoWidth / video.videoHeight;
-                let d = Math.min(window.screen.availWidth, video.videoWidth * a);
-                a = Math.min(window.screen.availHeight, video.videoHeight * a + b);
-                let e = Math.floor((a - b) * c);
-                e <= d ? d = e : (b = Math.floor(d / c) + b, b <= a && (a = b));
-                window.resizeTo(d, a);
-                window.moveTo((screen.availWidth - d) / 2 + screen.availLeft, (screen.availHeight - a) / 2 + screen.availTop);
-                WindowManager.saveWindowState()
-            }
-        }
-        static scale(a) {
-            popupWindow && 0 < video.videoWidth && 0 < video.videoHeight && (a ? a =( window.innerWidth + video.videoWidth / 4) / video.videoWidth : (a =( window.innerWidth - video.videoWidth / 4) / video.videoWidth, a = Math.max(a, .25)), WindowManager.scaleSize(a))
-        }
-        static isMaxSize() {
-            return window.outerWidth == window.screen.availWidth && window.outerHeight == window.screen.availHeight
-        }
-        static toggleMaxSize() {
-            popupWindow && (WindowManager.isMaxSize() ? WindowManager.restoreState() : window.resizeTo(window.screen.availWidth, window.screen.availHeight))
-        }
-        static async togglePip() {
-            document.pictureInPictureEnabled && ! video.disablePictureInPicture && 0 !== video.readyState && (getFullscreenElement() && await document.exitFullscreen(), document.pictureInPictureElement ? document.exitPictureInPicture() : video.requestPictureInPicture())
-        }
-        static async toggleFullscreen() {
-            document.pictureInPictureElement && await document.exitPictureInPicture();
-            getFullscreenElement() ? document.exitFullscreen() : playerPanel.requestFullscreen()
-        }
-        static exitFullscreen() {
-            getFullscreenElement() && document.exitFullscreen()
-        }
     }
-    class Settings {
-        static async init() {
-            seekStepInput.addEventListener("change", Utils.delay(Settings.saveSeekStep, 500));
-            seekLongStepInput.addEventListener("change", Utils.delay(Settings.saveSeekLongStep, 500));
-            volumeStepInput.addEventListener("change", Utils.delay(Settings.saveVolumeStep, 500));
-            speedStepInput.addEventListener("change", Settings.saveSpeedStep);
-            screenshotFormatInput.addEventListener("change", Settings.saveScreenshotFormat);
-            if (extensionMode) 
-                return chrome.storage.local.get({
-                    remainingTimeMode: !1
-                }, function (f) {
-                    remainingTimeMode = f.remainingTimeMode
-                }),
+    static scale(a) {
+        popupWindow && 0 < video.videoWidth && 0 < video.videoHeight && (a ? a = (window.innerWidth + video.videoWidth / 4) / video.videoWidth : (a = (window.innerWidth - video.videoWidth / 4) / video.videoWidth, a = Math.max(a, .25)), WindowManager.scaleSize(a))
+    }
+    static isMaxSize() {
+        return window.outerWidth == window.screen.availWidth && window.outerHeight == window.screen.availHeight
+    }
+    static toggleMaxSize() {
+        popupWindow && (WindowManager.isMaxSize() ? WindowManager.restoreState() : window.resizeTo(window.screen.availWidth, window.screen.availHeight))
+    }
+    static async togglePip() {
+        document.pictureInPictureEnabled && !video.disablePictureInPicture && 0 !== video.readyState && (getFullscreenElement() && await document.exitFullscreen(), document.pictureInPictureElement ? document.exitPictureInPicture() : video.requestPictureInPicture())
+    }
+    static async toggleFullscreen() {
+        document.pictureInPictureElement && await document.exitPictureInPicture();
+        getFullscreenElement() ? document.exitFullscreen() : playerPanel.requestFullscreen()
+    }
+    static exitFullscreen() {
+        getFullscreenElement() && document.exitFullscreen()
+    }
+}
+class Settings {
+    static async init() {
+        seekStepInput.addEventListener("change", Utils.delay(Settings.saveSeekStep, 500));
+        seekLongStepInput.addEventListener("change", Utils.delay(Settings.saveSeekLongStep, 500));
+        volumeStepInput.addEventListener("change", Utils.delay(Settings.saveVolumeStep, 500));
+        speedStepInput.addEventListener("change", Settings.saveSpeedStep);
+        screenshotFormatInput.addEventListener("change", Settings.saveScreenshotFormat);
+        if (extensionMode)
+            return chrome.storage.local.get({
+                remainingTimeMode: !1
+            }, function (f) {
+                remainingTimeMode = f.remainingTimeMode
+            }),
                 new Promise(function (f, h) {
                     chrome.storage.sync.get(settings, function (g) {
                         settings = g;
@@ -486,123 +533,127 @@ class FileManager {
                         f()
                     })
                 });
-            
 
-            remainingTimeMode = "true" === localStorage.getItem("remainingTimeMode");
-            let a = localStorage.getItem("seekStep"),
-                b = localStorage.getItem("seekLongStep"),
-                c = localStorage.getItem("volumeStep"),
-                d = localStorage.getItem("speedStep"),
-                e = localStorage.getItem("screenshotFormat");
-            a && (settings.seekStep = parseInt(a, 10));
-            b && (settings.seekLongStep = parseInt(b, 10));
-            c && (settings.volumeStep = parseInt(c, 10));
-            d && (settings.speedStep = parseFloat(d));
-            e && (settings.screenshotFormat = e);
-            Settings.initInputValues()
-        }
-        static initInputValues() {
-            seekStepInput.value = settings.seekStep;
-            seekLongStepInput.value = settings.seekLongStep;
-            volumeStepInput.value = settings.volumeStep;
-            speedStepInput.value = settings.speedStep;
-            screenshotFormatInput.value = settings.screenshotFormat
-        }
-        static save(a, b) {
-            settings[a] = b;
-            if (extensionMode) {
-                let c = {};
-                c[a] = b;
-                chrome.storage.sync.set(c)
-            } else 
-                try {
-                    localStorage.setItem(a, b)
-                }
-             catch (c) {
+
+
+        remainingTimeMode = "true" === localStorage.getItem("remainingTimeMode");
+        let a = localStorage.getItem("seekStep"),
+            b = localStorage.getItem("seekLongStep"),
+            c = localStorage.getItem("volumeStep"),
+            d = localStorage.getItem("speedStep"),
+            e = localStorage.getItem("screenshotFormat");
+        a && (settings.seekStep = parseInt(a, 10));
+        b && (settings.seekLongStep = parseInt(b, 10));
+        c && (settings.volumeStep = parseInt(c, 10));
+        d && (settings.speedStep = parseFloat(d));
+        e && (settings.screenshotFormat = e);
+        Settings.initInputValues()
+    }
+    static initInputValues() {
+        seekStepInput.value = settings.seekStep;
+        seekLongStepInput.value = settings.seekLongStep;
+        volumeStepInput.value = settings.volumeStep;
+        speedStepInput.value = settings.speedStep;
+        screenshotFormatInput.value = settings.screenshotFormat
+    }
+    static save(a, b) {
+        settings[a] = b;
+        if (extensionMode) {
+            let c = {};
+            c[a] = b;
+            chrome.storage.sync.set(c)
+        } else
+            try {
+                localStorage.setItem(a, b)
+            }
+            catch (c) {
                 console.log("localStorage error:", c)
             }
-        }
-        static saveSeekStep(a) {
-            1 <= seekStepInput.valueAsNumber && Settings.save("seekStep", seekStepInput.valueAsNumber)
-        }
-        static saveSeekLongStep(a) {
-            1 <= seekLongStepInput.valueAsNumber && Settings.save("seekLongStep", seekLongStepInput.valueAsNumber)
-        }
-        static saveVolumeStep(a) {
-            a = volumeStepInput.valueAsNumber;
-            1 <= a && 50 >= a && Settings.save("volumeStep", a)
-        }
-        static saveSpeedStep(a) {
-            a = parseFloat(speedStepInput.value);
-            0 < a && 1 >= a && Settings.save("speedStep", a)
-        }
-        static saveScreenshotFormat(a) {
-            Settings.save("screenshotFormat", screenshotFormatInput.value)
-        }
-        static saveRemainingTimeMode(a) {
-            if (extensionMode) 
-                chrome.storage.local.set({remainingTimeMode: a});
-             else 
-                try {
-                    localStorage.setItem("remainingTimeMode", a)
-                }
-             catch (b) {
+    }
+    static saveSeekStep(a) {
+        1 <= seekStepInput.valueAsNumber && Settings.save("seekStep", seekStepInput.valueAsNumber)
+    }
+    static saveSeekLongStep(a) {
+        1 <= seekLongStepInput.valueAsNumber && Settings.save("seekLongStep", seekLongStepInput.valueAsNumber)
+    }
+    static saveVolumeStep(a) {
+        a = volumeStepInput.valueAsNumber;
+        1 <= a && 50 >= a && Settings.save("volumeStep", a)
+    }
+    static saveSpeedStep(a) {
+        a = parseFloat(speedStepInput.value);
+        0 < a && 1 >= a && Settings.save("speedStep", a)
+    }
+    static saveScreenshotFormat(a) {
+        Settings.save("screenshotFormat", screenshotFormatInput.value)
+    }
+    static saveRemainingTimeMode(a) {
+        if (extensionMode)
+            chrome.storage.local.set({ remainingTimeMode: a });
+        else
+            try {
+                localStorage.setItem("remainingTimeMode", a)
+            }
+            catch (b) {
                 console.log("localStorage error:", b)
             }
-        }
     }
-    class I18N {
-        static init() {
-            let a = document.querySelectorAll("[data-i18n]");
-            for (const b of a) 
-                b.textContent = Messages[b.dataset.i18n]
+}
+class I18N {
+    static init() {
+        let a = document.querySelectorAll("[data-i18n]");
+        for (const b of a)
+            b.textContent = Messages[b.dataset.i18n]
 
-            
 
-        }
-    } I18N.en = {
-        title: "Video Player",
-        seekStep: "Short Jump",
-        seekLongStep: "Long Jump",
-        volumeStep: "Volume Jump",
-        speedStep: "Speed Jump",
-        screenshotFormat: "Screenshot",
-        shortcuts: "Shortcuts",
-        dropzone: "Drop Video Files Here",
-        muted: "Muted",
-        unmuted: "Unmuted",
-        speedIs: "Speed: ",
-        volumeIs: "Volume: ",
-        error: "Something wrong",
-        cannotSupportFormat: "Can't support this video format",
-        notAllowedError: 'The browser does not allow autoplay.\nYou need to change your borwser settings:\nSafari: Preferences \u2192 Websites \u2192 Auto-Play.\nFirefox: Preferences \u2192 Search for "Autoplay".\nChrome: Preferences \u2192 Site settings \u2192 Sound.\n'
-    };
-    I18N["zh-CN"] = {
-        title: "\u89c6\u9891\u64ad\u653e\u5668",
-        seekStep: "\u77ed\u5feb\u8fdb",
-        seekLongStep: "\u957f\u5feb\u8fdb",
-        volumeStep: "\u97f3\u91cf+/-",
-        speedStep: "\u500d\u901f+/-",
-        screenshotFormat: "\u622a\u56fe\u683c\u5f0f",
-        shortcuts: "\u5feb\u6377\u952e\u8bf4\u660e",
-        dropzone: "\u62d6\u62fd\u89c6\u9891\u6587\u4ef6\u5230\u8fd9\u91cc",
-        muted: "\u5df2\u9759\u97f3",
-        unmuted: "\u5df2\u53d6\u6d88\u9759\u97f3",
-        speedIs: "\u500d\u901f: ",
-        volumeIs: "\u97f3\u91cf: ",
-        error: "\u51fa\u9519\u4e86",
-        cannotSupportFormat: "\u4e0d\u652f\u6301\u6b64\u89c6\u9891\u683c\u5f0f",
-        notAllowedError: '\u6d4f\u89c8\u5668\u4e0d\u5141\u8bb8\u81ea\u52a8\u64ad\u653e\u3002\n\u60a8\u9700\u8981\u8c03\u6574\u6d4f\u89c8\u5668\u7684\u8bbe\u7f6e\uff1a\nSafari: \u8bbe\u7f6e \u2192 \u7f51\u7ad9 \u2192 \u81ea\u52a8\u64ad\u653e\u3002\nFirefox: \u8bbe\u7f6e \u2192 \u641c\u7d22 "\u81ea\u52a8\u64ad\u653e"\u3002\nChrome: \u8bbe\u7f6e \u2192 \u7f51\u7ad9\u8bbe\u7f6e \u2192 \u58f0\u97f3\u3002\n'
-    };
-    var Messages = "zh-CN" == navigator.language ? I18N["zh-CN"] : I18N.en;
-    async function init() {
-        I18N.init();
-        await Settings.init();
-        Clock.init();
-        Player.init();
-        Controls.init();
-        FileManager.init();
-        WindowManager.init()
-    };
 
-    init()
+
+
+    }
+} I18N.en = {
+    title: "Video Player",
+    seekStep: "Short Jump",
+    seekLongStep: "Long Jump",
+    volumeStep: "Volume Jump",
+    speedStep: "Speed Jump",
+    screenshotFormat: "Screenshot",
+    shortcuts: "Shortcuts",
+    dropzone: "Drop Video Files Here",
+    muted: "Muted",
+    unmuted: "Unmuted",
+    speedIs: "Speed: ",
+    volumeIs: "Volume: ",
+    error: "Something wrong",
+    cannotSupportFormat: "Can't support this video format",
+    notAllowedError: 'The browser does not allow autoplay.\nYou need to change your borwser settings:\nSafari: Preferences \u2192 Websites \u2192 Auto-Play.\nFirefox: Preferences \u2192 Search for "Autoplay".\nChrome: Preferences \u2192 Site settings \u2192 Sound.\n'
+};
+I18N["zh-CN"] = {
+    title: "\u89c6\u9891\u64ad\u653e\u5668",
+    seekStep: "\u77ed\u5feb\u8fdb",
+    seekLongStep: "\u957f\u5feb\u8fdb",
+    volumeStep: "\u97f3\u91cf+/-",
+    speedStep: "\u500d\u901f+/-",
+    screenshotFormat: "\u622a\u56fe\u683c\u5f0f",
+    shortcuts: "\u5feb\u6377\u952e\u8bf4\u660e",
+    dropzone: "\u62d6\u62fd\u89c6\u9891\u6587\u4ef6\u5230\u8fd9\u91cc",
+    muted: "\u5df2\u9759\u97f3",
+    unmuted: "\u5df2\u53d6\u6d88\u9759\u97f3",
+    speedIs: "\u500d\u901f: ",
+    volumeIs: "\u97f3\u91cf: ",
+    error: "\u51fa\u9519\u4e86",
+    cannotSupportFormat: "\u4e0d\u652f\u6301\u6b64\u89c6\u9891\u683c\u5f0f",
+    notAllowedError: '\u6d4f\u89c8\u5668\u4e0d\u5141\u8bb8\u81ea\u52a8\u64ad\u653e\u3002\n\u60a8\u9700\u8981\u8c03\u6574\u6d4f\u89c8\u5668\u7684\u8bbe\u7f6e\uff1a\nSafari: \u8bbe\u7f6e \u2192 \u7f51\u7ad9 \u2192 \u81ea\u52a8\u64ad\u653e\u3002\nFirefox: \u8bbe\u7f6e \u2192 \u641c\u7d22 "\u81ea\u52a8\u64ad\u653e"\u3002\nChrome: \u8bbe\u7f6e \u2192 \u7f51\u7ad9\u8bbe\u7f6e \u2192 \u58f0\u97f3\u3002\n'
+};
+var Messages = "zh-CN" == navigator.language ? I18N["zh-CN"] : I18N.en;
+async function init() {
+    I18N.init();
+    await Settings.init();
+    Clock.init();
+    Player.init();
+    Controls.init();
+    FileManager.init();
+    WindowManager.init()
+    Syncronization.init()
+};
+
+init()
